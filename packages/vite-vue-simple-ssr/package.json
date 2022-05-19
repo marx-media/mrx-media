@@ -8,6 +8,10 @@
       "import": {
         "types": "./dist/vue/index.d.ts",
         "default": "./dist/vue/index.js"
+      },
+      "require": {
+        "types": "./dist/vue/index.d.ts",
+        "default": "./dist/vue/index.cjs"
       }
     },
     "./loader": "./dist/cli/loader.mjs",
@@ -15,12 +19,20 @@
       "import": {
         "types": "./dist/server/index.d.ts",
         "default": "./dist/server/index.js"
+      },
+      "require": {
+        "types": "./dist/server/index.d.ts",
+        "default": "./dist/server/index.cjs"
       }
     },
     "./utils": {
       "import": {
         "types": "./dist/utils/index.d.ts",
         "default": "./dist/utils/index.js"
+      },
+      "require": {
+        "types": "./dist/utils/index.d.ts",
+        "default": "./dist/utils/index.cjs"
       }
     }
   },

@@ -1,0 +1,29 @@
+{
+  "name": "@mrx-media/directus-extension-vue-ssr",
+  "version": "1.0.0",
+  "author": "Dominic Marx <hey@marx-media.net>",
+  "type": "module",
+  "scripts": {
+    "build": "tsup"
+  },
+  "keywords": [
+    "directus",
+    "directus-extension",
+    "directus-hook",
+    "vue",
+    "ssr"
+  ],
+  "directus:extension": {
+    "type": "hook",
+    "path": "dist/index.js",
+    "source": "src/index.ts",
+    "host": "^v9.10.0"
+  },
+  "dependencies": {
+    "@directus/extensions-sdk": "^9.10.0",
+    "@mrx-media/vite-vue-simple-ssr": "workspace:^1.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^5.12.8"
+  }
+}

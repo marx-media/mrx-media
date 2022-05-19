@@ -13,14 +13,14 @@ import type { RendererResult, ServerOptions } from '../types';
 // resolve at cwd
 // const resolve = (p: string) => path.resolve(process.cwd(), p);
 
-const getSsrManifest = (isProd: boolean): any => {
+const getSsrManifest = (isProd: boolean, root: string): any => {
   return isProd
-    ? fs.readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8')
+    ? fs.readFileSync(resolve(root, 'dist/client/ssr-manifest.json'), 'utf-8')
     : {};
 };
 
-const getIndexHtml = (): string => {
-  return fs.readFileSync(resolve('dist/client/index.html'), 'utf-8');
+const getIndexHtml = (root: string): string => {
+  return fs.readFileSync(resolve(root, 'dist/client/index.html'), 'utf-8');
 };
 
 const createViteDevServer = async (root: string): Promise<ViteDevServer> => {
@@ -44,7 +44,7 @@ const getTemplateAndRenderer = async (
     template = await vite.transformIndexHtml(url, template);
     render = (await vite.ssrLoadModule(resolve(root, 'src/main.ts'))).default;
   } else {
-    render = (await import(resolve(root, 'dist/server/main'))).default;
+    render = (await import(resolve(root, 'dist/server/main.js'))).default;
   }
   return { template, render };
 };
@@ -95,13 +95,13 @@ export const expressMiddleware = async (
     try {
       const url = req.originalUrl;
       const { template, render } = await getTemplateAndRenderer(
-        getIndexHtml(),
+        getIndexHtml(root),
         url,
         root,
         vite,
       );
 
-      const result = await render(url, getSsrManifest(isProd), {
+      const result = await render(url, getSsrManifest(isProd, root), {
         initialState,
         isClient: false,
         request: req,
@@ -168,12 +168,12 @@ export const fastifyMiddleware = async (
 
       // - otherwise -> render vue
       const { template, render } = await getTemplateAndRenderer(
-        getIndexHtml(),
+        getIndexHtml(root),
         url,
         root,
         vite,
       );
-      const result = await render(url, getSsrManifest(isProd), {
+      const result = await render(url, getSsrManifest(isProd, root), {
         initialState,
         isClient: false,
         request: req,

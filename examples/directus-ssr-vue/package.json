@@ -1,0 +1,16 @@
+{
+  "name": "@marx-media/example-directus-ssr-vue",
+  "version": "1.0.0",
+  "author": "Dominic Marx <hey@marx-media.net>",
+  "scripts": {
+    "bootstrap": "npx directus bootstrap"
+  },
+  "dependencies": {
+    "@mrx-media/vite-vue-simple-ssr": "workspace:^1.0.0",
+    "@vueuse/head": "^0.7.6",
+    "directus": "^9.10.0",
+    "sqlite3": "^5.0.8",
+    "vue": "^3.2.34",
+    "vue-router": "^4.0.15"
+  }
+}
