@@ -1,12 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: [
-    'src/index.ts',
-    'src/vue/index.ts',
-    'src/cli/program.ts',
-    'src/server/index.ts',
-  ],
+  entry: ['src/vue/index.ts', 'src/cli/program.ts', 'src/server/index.ts'],
   splitting: false,
   sourcemap: true,
   clean: true,
