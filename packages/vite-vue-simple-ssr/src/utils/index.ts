@@ -29,17 +29,34 @@ export const renderPreloadLinks = (files: string[]): string => {
     } else if (file.endsWith('.css')) {
       link += `<link rel="stylesheet" href="${file}">`;
     } else if (file.endsWith('.woff')) {
-      return ` <link rel="preload" href="${file}" as="font" type="font/woff" crossorigin>`;
+      link += ` <link rel="preload" href="${file}" as="font" type="font/woff" crossorigin>`;
     } else if (file.endsWith('.woff2')) {
-      return ` <link rel="preload" href="${file}" as="font" type="font/woff2" crossorigin>`;
+      link += ` <link rel="preload" href="${file}" as="font" type="font/woff2" crossorigin>`;
     } else if (file.endsWith('.gif')) {
-      return ` <link rel="preload" href="${file}" as="image" type="image/gif">`;
+      link += ` <link rel="preload" href="${file}" as="image" type="image/gif">`;
     } else if (file.endsWith('.jpg') || file.endsWith('.jpeg')) {
-      return ` <link rel="preload" href="${file}" as="image" type="image/jpeg">`;
+      link += ` <link rel="preload" href="${file}" as="image" type="image/jpeg">`;
     } else if (file.endsWith('.png')) {
-      return ` <link rel="preload" href="${file}" as="image" type="image/png">`;
+      link += ` <link rel="preload" href="${file}" as="image" type="image/png">`;
     }
   }
 
   return link;
+};
+
+export const simpleLog = (
+  msg: string,
+  level: 'info' | 'error' | 'warn' = 'info',
+) => {
+  const now = new Date();
+  const icon: string = {
+    info: '🚀',
+    error: '🐞',
+    warn: '⚠️',
+  }[level];
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `\x1B[35m[${now.getHours()}:${now.getMinutes()}]\x1B[0m - ${icon} ${msg}`,
+  );
 };

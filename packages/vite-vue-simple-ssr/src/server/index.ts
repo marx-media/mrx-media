@@ -7,6 +7,8 @@ import type { FastifyInstance } from 'fastify';
 import fastifyMiddie from 'middie';
 import fastifyStatic from '@fastify/static';
 import fastifyCompression from '@fastify/compress';
+import devalue from '@nuxt/devalue';
+import type { RendererResult, ServerOptions } from '../types';
 
 // resolve at cwd
 // const resolve = (p: string) => path.resolve(process.cwd(), p);
@@ -49,27 +51,39 @@ const getTemplateAndRenderer = async (
 
 const buildServeHtml = (
   template: string,
-  appHtml: string,
-  preloadLinks = '',
+  { html, preloadLinks, headTags, bodyAttrs, htmlAttrs }: RendererResult,
+  initialState: any,
 ) => {
+  initialState = devalue(initialState);
   return template
-    .replace(`<!--preload-links-->`, preloadLinks)
-    .replace(`<!--app-html-->`, appHtml);
+    .replace('<html', `<html ${htmlAttrs}`)
+    .replace('<body', `<body ${bodyAttrs}`)
+    .replace(`</head>`, `${[preloadLinks, headTags].join('\n')}\n</head>`)
+    .replace(`<!--app-html-->`, html)
+    .replace(
+      '</body>',
+      `<script>window.__INITIAL_STATE__=${initialState}</script>\n</body>`,
+    );
 };
 
 export const expressMiddleware = async (
   app: Application,
-  viteRoot = process.cwd(),
+  {
+    root = process.cwd(),
+    initialState = {},
+    useCompression = true,
+  }: ServerOptions = {},
 ) => {
   const isProd = process.env.NODE_ENV !== 'development';
-  const root = viteRoot;
 
   let vite: ViteDevServer | undefined;
   if (!isProd) {
     vite = await createViteDevServer(root);
     app.use(vite.middlewares);
   } else {
-    app.use(compression());
+    if (useCompression) {
+      app.use(compression());
+    }
     app.use(
       express.static(resolve('dist/client'), {
         index: false,
@@ -87,12 +101,17 @@ export const expressMiddleware = async (
         vite,
       );
 
-      const { html, preloadLinks } = await render(url, getSsrManifest(isProd));
+      const result = await render(url, getSsrManifest(isProd), {
+        initialState,
+        isClient: false,
+        request: req,
+        response: res,
+      });
 
       res
         .status(200)
         .set({ 'Content-Type': 'text/html' })
-        .end(buildServeHtml(template, html, preloadLinks));
+        .end(buildServeHtml(template, result, initialState));
     } catch (e: any) {
       vite && vite.ssrFixStacktrace(e);
       console.error(e.stack);
@@ -103,10 +122,13 @@ export const expressMiddleware = async (
 
 export const fastifyMiddleware = async (
   app: FastifyInstance,
-  viteRoot = process.cwd(),
+  {
+    root = process.cwd(),
+    initialState = {},
+    useCompression = true,
+  }: ServerOptions = {},
 ) => {
   const isProd = process.env.NODE_ENV !== 'development';
-  const root = viteRoot;
 
   await app.register(fastifyMiddie);
 
@@ -119,7 +141,9 @@ export const fastifyMiddleware = async (
     vite = await createViteDevServer(root);
     app.use(vite.middlewares);
   } else {
-    await app.register(fastifyCompression);
+    if (useCompression) {
+      await app.register(fastifyCompression);
+    }
     await app.register(fastifyStatic, {
       root: resolve(root, 'dist/client'),
     });
@@ -149,10 +173,15 @@ export const fastifyMiddleware = async (
         root,
         vite,
       );
-      const { html, preloadLinks } = await render(url, getSsrManifest(isProd));
+      const result = await render(url, getSsrManifest(isProd), {
+        initialState,
+        isClient: false,
+        request: req,
+        response: res,
+      });
 
       res.writeHead(200, { 'Content-Type': 'text/html' });
-      return res.end(buildServeHtml(template, html, preloadLinks));
+      return res.end(buildServeHtml(template, result, initialState));
     } catch (e: any) {
       vite && vite.ssrFixStacktrace(e);
       res.statusCode = 500;
