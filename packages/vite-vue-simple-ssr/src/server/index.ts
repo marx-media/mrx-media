@@ -1,13 +1,26 @@
 import fs from 'fs';
-import path from 'path';
+import { resolve } from 'path';
 import { type ViteDevServer, createServer } from 'vite';
-import type { Application } from 'express';
+import express, { type Application } from 'express';
+import compression from 'compression';
 import type { FastifyInstance } from 'fastify';
 import fastifyMiddie from 'middie';
+import fastifyStatic from '@fastify/static';
+import fastifyCompression from '@fastify/compress';
 
-const resolve = (p: string) => path.resolve(process.cwd(), p);
-const getManifest = (isProd: boolean): any => (isProd ? {} : {});
-const getIndexHtml = (isProd: boolean): string => (isProd ? '' : '');
+// resolve at cwd
+// const resolve = (p: string) => path.resolve(process.cwd(), p);
+
+const getSsrManifest = (isProd: boolean): any => {
+  return isProd
+    ? fs.readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8')
+    : {};
+};
+
+const getIndexHtml = (): string => {
+  return fs.readFileSync(resolve('dist/client/index.html'), 'utf-8');
+};
+
 const createViteDevServer = async (root: string): Promise<ViteDevServer> => {
   return await createServer({
     root,
@@ -17,41 +30,69 @@ const createViteDevServer = async (root: string): Promise<ViteDevServer> => {
   });
 };
 
-const getTemplateAndRenderer = async (url: string, vite?: ViteDevServer) => {
-  let template: string;
+const getTemplateAndRenderer = async (
+  template = '',
+  url: string,
+  root: string,
+  vite?: ViteDevServer,
+) => {
   let render: any;
   if (vite) {
-    template = fs.readFileSync(resolve('index.html'), 'utf-8');
+    template = fs.readFileSync(resolve(root, 'index.html'), 'utf-8');
     template = await vite.transformIndexHtml(url, template);
-    render = (await vite.ssrLoadModule(resolve('src/main.ts'))).default;
+    render = (await vite.ssrLoadModule(resolve(root, 'src/main.ts'))).default;
   } else {
-    template = '';
+    render = (await import(resolve(root, 'dist/server/main'))).default;
   }
   return { template, render };
 };
 
-export const expressMiddleware = async (app: Application) => {
-  const isProd = process.env.NODE_ENV !== 'development';
-  const root = process.cwd();
+const buildServeHtml = (
+  template: string,
+  appHtml: string,
+  preloadLinks = '',
+) => {
+  return template
+    .replace(`<!--preload-links-->`, preloadLinks)
+    .replace(`<!--app-html-->`, appHtml);
+};
 
-  const manifest = getManifest(isProd);
-  const indexHtml = getIndexHtml(isProd);
+export const expressMiddleware = async (
+  app: Application,
+  viteRoot = process.cwd(),
+) => {
+  const isProd = process.env.NODE_ENV !== 'development';
+  const root = viteRoot;
 
   let vite: ViteDevServer | undefined;
   if (!isProd) {
     vite = await createViteDevServer(root);
     app.use(vite.middlewares);
+  } else {
+    app.use(compression());
+    app.use(
+      express.static(resolve('dist/client'), {
+        index: false,
+      }),
+    );
   }
 
   app.use('*', async (req, res) => {
     try {
       const url = req.originalUrl;
+      const { template, render } = await getTemplateAndRenderer(
+        getIndexHtml(),
+        url,
+        root,
+        vite,
+      );
 
-      const { template, render } = await getTemplateAndRenderer(url, vite);
-      const { html: appHtml } = await render(url, manifest);
+      const { html, preloadLinks } = await render(url, getSsrManifest(isProd));
 
-      const html = template.replace(`<!--app-html-->`, appHtml);
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
+      res
+        .status(200)
+        .set({ 'Content-Type': 'text/html' })
+        .end(buildServeHtml(template, html, preloadLinks));
     } catch (e: any) {
       vite && vite.ssrFixStacktrace(e);
       console.error(e.stack);
@@ -60,30 +101,58 @@ export const expressMiddleware = async (app: Application) => {
   });
 };
 
-export const fastifyMiddleware = async (app: FastifyInstance) => {
+export const fastifyMiddleware = async (
+  app: FastifyInstance,
+  viteRoot = process.cwd(),
+) => {
   const isProd = process.env.NODE_ENV !== 'development';
-  const root = process.cwd();
+  const root = viteRoot;
 
   await app.register(fastifyMiddie);
 
-  const manifest = getManifest(isProd);
-  const indexHtml = getIndexHtml(isProd);
+  const {
+    default: { ssr: ssrAssets },
+  } = await import(resolve('dist/server/package.json'));
+
   let vite: ViteDevServer;
   if (!isProd) {
     vite = await createViteDevServer(root);
     app.use(vite.middlewares);
+  } else {
+    await app.register(fastifyCompression);
+    await app.register(fastifyStatic, {
+      root: resolve(root, 'dist/client'),
+    });
+    await app.register(fastifyStatic, {
+      root: resolve(root, 'dist/client/assets'),
+      prefix: '/assets/',
+      decorateReply: false,
+    });
   }
 
   app.use(async (req, res, next) => {
     try {
       const url = req.originalUrl!;
 
-      const { template, render } = await getTemplateAndRenderer(url, vite);
-      const { html: appHtml } = await render(url, manifest);
+      // - check if incoming request is an asset request
+      const isAssetRequest = ssrAssets.some((asset: string) =>
+        url.substring(1, url.length).startsWith(asset),
+      );
 
-      const html = template.replace(`<!--app-html-->`, appHtml);
+      // - if asset request or not an get => next!
+      if (isAssetRequest || req.method !== 'GET') return next();
+
+      // - otherwise -> render vue
+      const { template, render } = await getTemplateAndRenderer(
+        getIndexHtml(),
+        url,
+        root,
+        vite,
+      );
+      const { html, preloadLinks } = await render(url, getSsrManifest(isProd));
+
       res.writeHead(200, { 'Content-Type': 'text/html' });
-      return res.end(html);
+      return res.end(buildServeHtml(template, html, preloadLinks));
     } catch (e: any) {
       vite && vite.ssrFixStacktrace(e);
       res.statusCode = 500;

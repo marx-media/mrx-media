@@ -6,6 +6,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   format: ['esm'],
+  target: 'esnext',
   dts: true,
-  noExternal: [/commander/],
+  // noExternal: [/commander/],
 });
