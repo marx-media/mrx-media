@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "sourceMap": false,
+    "target": "es2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowJs": false,
+    "strict": true,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "rootDir": ".",
+    "removeComments": true,
+    "types": ["node"],
+    "lib": ["ESNext", "DOM"], // vue/vetur needs this
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "paths": {
+      "@mrx-media/*": ["packages/*"]
+    }
+  },
+  "exclude": ["node_modules", "**/node_modules"]
+}
