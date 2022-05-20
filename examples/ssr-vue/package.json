@@ -1,5 +1,5 @@
 {
-  "name": "@marx-media/example-ssr-vue",
+  "name": "example-ssr-vue",
   "version": "1.0.0",
   "author": "Dominic Marx <hey@marx-media.net>",
   "type": "module",
