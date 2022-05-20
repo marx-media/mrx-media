@@ -32,10 +32,11 @@ var import_path = require("path");
 var import_url = require("url");
 var import_extensions_sdk = require("@directus/extensions-sdk");
 var import_server = require("@mrx-media/vite-vue-simple-ssr/server");
-var src_default = (0, import_extensions_sdk.defineHook)(({ init }) => {
+var src_default = (0, import_extensions_sdk.defineHook)(({ init }, { env }) => {
   init("routes.custom.before", async ({ app }) => {
-    const root = (0, import_path.dirname)((0, import_url.fileURLToPath)(importMetaUrl));
-    await (0, import_server.expressMiddleware)(app, { root });
+    const root = env.VITE_ROOT ?? (0, import_path.dirname)((0, import_url.fileURLToPath)(importMetaUrl));
+    const isProd = env.VITE_DEV ? !env.VITE_DEV : true;
+    await (0, import_server.expressMiddleware)(app, { root, isProd });
   });
 });
 // Annotate the CommonJS export names for ESM import in node:
