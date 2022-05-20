@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "author": "Dominic Marx <hey@marx-media.net>",
   "scripts": {
-    "bootstrap": "npx directus bootstrap"
+    "bootstrap": "npx directus bootstrap",
+    "start": "npx directus start"
   },
   "dependencies": {
     "@mrx-media/vite-vue-simple-ssr": "workspace:^1.0.0",

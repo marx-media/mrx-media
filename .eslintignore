@@ -2,3 +2,5 @@ cli.js
 dist
 public
 node_modules
+
+**/directus-*/**/extensions/**/*

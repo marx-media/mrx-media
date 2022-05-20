@@ -6,3 +6,5 @@ pnpm-lock.yaml
 payload.json
 CHANGELOG.md
 *.sass
+
+**/directus-*/**/extensions/**/*

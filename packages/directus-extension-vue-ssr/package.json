@@ -4,7 +4,8 @@
   "author": "Dominic Marx <hey@marx-media.net>",
   "type": "module",
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "build:watch": "tsup --watch"
   },
   "keywords": [
     "directus",
@@ -24,6 +25,17 @@
     "@mrx-media/vite-vue-simple-ssr": "workspace:^1.0.0"
   },
   "devDependencies": {
+    "directus-codestyle": "github:dimitrov-adrian/directus-codestyle",
     "tsup": "^5.12.8"
+  },
+  "prettier": "directus-codestyle/prettier",
+  "stylelint": {
+    "extends": "directus-codestyle/stylelint"
+  },
+  "eslintConfig": {
+    "extends": "./node_modules/directus-codestyle/.eslintrc.js",
+    "parserOptions": {
+      "sourceType": "module"
+    }
   }
 }
