@@ -9,6 +9,7 @@ import fastifyStatic from '@fastify/static';
 import fastifyCompression from '@fastify/compress';
 import type { Request, Response } from 'express';
 import type { ServerOptions } from '../types';
+import { simpleLog } from '../utils';
 import {
   buildServeHtml,
   createViteDevServer,
@@ -174,10 +175,15 @@ export const ssrMiddleware = async (
 
   const isFastify = 'version' in app;
   if (isFastify) await app.register(fastifyMiddie);
-
-  const {
-    default: { ssr: ssrAssets },
-  } = await import(resolve(root, 'dist/server/package.json'));
+  let assets: string[] = [];
+  try {
+    const {
+      default: { ssr: ssrAssets },
+    } = await import(resolve(root, 'dist/server/package.json'));
+    assets = ssrAssets as string[];
+  } catch (e: any) {
+    simpleLog(e.message, 'warn');
+  }
 
   let vite: ViteDevServer | undefined;
   if (!isProd) {
@@ -198,11 +204,12 @@ export const ssrMiddleware = async (
     } else {
       if (useCompression) app.use(compression());
 
-      app.use(
-        express.static(resolve('dist/client'), {
-          index: false,
-        }),
-      );
+      for (const asset of assets || []) {
+        app.use(
+          `/${asset}`,
+          express.static(resolve(root, 'dist/client', asset), {}),
+        );
+      }
     }
   }
 

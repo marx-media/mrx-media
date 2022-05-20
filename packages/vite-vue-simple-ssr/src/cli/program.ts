@@ -3,18 +3,18 @@ import fs from 'fs';
 import { type InlineConfig, build, mergeConfig, resolveConfig } from 'vite';
 import { simpleLog } from '../utils';
 
-const generatePackageJson = async (cfg: InlineConfig) => {
+const generatePackageJson = async (cfg: InlineConfig, outDir = 'dist') => {
   const viteConfig = await resolveConfig(cfg, 'build');
   const packageJson = {
     main: parse(viteConfig.build.ssr as string).base,
     type: 'module',
     ssr: fs
-      .readdirSync(resolve(process.cwd(), 'dist/client'))
+      .readdirSync(resolve(outDir, 'client'))
       .filter((file) => !/(index\.html|manifest\.json)$/i.test(file)),
   };
 
   fs.writeFileSync(
-    resolve(process.cwd(), 'dist/server/package.json'),
+    resolve(outDir, 'server/package.json'),
     JSON.stringify(packageJson, null, 2),
     { encoding: 'utf-8' },
   );
@@ -48,7 +48,7 @@ const ssrBuild = async (options: any = {}): Promise<void> => {
 
   await build(mergeConfig(clientConfig, sharedConfig));
   await build(mergeConfig(serverConfig, sharedConfig));
-  await generatePackageJson(serverConfig);
+  await generatePackageJson(serverConfig, outDir);
 };
 
 export const execute = async (): Promise<void> => {

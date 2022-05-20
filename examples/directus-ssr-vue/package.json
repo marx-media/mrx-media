@@ -9,7 +9,7 @@
   "dependencies": {
     "@mrx-media/vite-vue-simple-ssr": "workspace:^1.0.0",
     "@vueuse/head": "^0.7.6",
-    "directus": "^9.11.0",
+    "directus": "9.11.0",
     "geojson": "^0.5.0",
     "sqlite3": "^5.0.8",
     "vue": "^3.2.34",
