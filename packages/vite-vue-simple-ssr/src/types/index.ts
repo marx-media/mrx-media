@@ -4,6 +4,11 @@ import type { HeadClient } from '@vueuse/head';
 
 export interface HandlerOptions {
   routes: RouteRecordRaw[];
+
+  /* This is only used by SSR
+   *
+   */
+  initialState?: any;
   /**
    * If debug mode is on, client application renders 3 seconds after server application
    *
@@ -27,17 +32,13 @@ export interface HookResolve {
 }
 
 export interface ServerOptions {
+  isProd?: boolean;
   /**
    * Root path to your vite application
    *
    * default to `process.cwd()`
    */
   root?: string;
-
-  /**
-   * Specifiy initial state
-   */
-  initialState?: any;
 
   /**
    * Are you want to use compression on server
@@ -53,6 +54,7 @@ export interface RendererResult {
   headTags: string;
   htmlAttrs: string;
   bodyAttrs: string;
+  initialState: any;
 }
 
 export type Handler = (

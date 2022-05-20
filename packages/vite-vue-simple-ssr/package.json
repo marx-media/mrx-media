@@ -42,7 +42,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup && cp -R src/cli/*.*js dist/cli"
+    "build": "tsup",
+    "build:watch": "tsup --watch"
   },
   "dependencies": {
     "@fastify/compress": "^5.0.0",

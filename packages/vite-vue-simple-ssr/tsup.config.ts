@@ -14,5 +14,7 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   target: 'esnext',
   dts: true,
+  shims: true,
   noExternal: [/@nuxt\/devalue/],
+  onSuccess: 'node scripts/postbuild.js',
 });

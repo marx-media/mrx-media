@@ -1,78 +1,57 @@
-import fs from 'fs';
 import { resolve } from 'path';
-import { type ViteDevServer, createServer } from 'vite';
+import type { IncomingMessage, ServerResponse } from 'http';
+import { type ViteDevServer } from 'vite';
 import express, { type Application } from 'express';
 import compression from 'compression';
 import type { FastifyInstance } from 'fastify';
 import fastifyMiddie from 'middie';
 import fastifyStatic from '@fastify/static';
 import fastifyCompression from '@fastify/compress';
-import devalue from '@nuxt/devalue';
-import type { RendererResult, ServerOptions } from '../types';
+import type { Request, Response } from 'express';
+import type { ServerOptions } from '../types';
+import {
+  buildServeHtml,
+  createViteDevServer,
+  getIndexHtml,
+  getSsrManifest,
+  getTemplateAndRenderer,
+} from './utils';
+interface RequestHandler {
+  isProd: boolean;
+  root: string;
+  url: string;
+  request: Request | IncomingMessage;
+  response: Response | ServerResponse;
+  vite?: ViteDevServer;
+}
 
-// resolve at cwd
-// const resolve = (p: string) => path.resolve(process.cwd(), p);
-
-const getSsrManifest = (isProd: boolean, root: string): any => {
-  return isProd
-    ? fs.readFileSync(resolve(root, 'dist/client/ssr-manifest.json'), 'utf-8')
-    : {};
-};
-
-const getIndexHtml = (root: string): string => {
-  return fs.readFileSync(resolve(root, 'dist/client/index.html'), 'utf-8');
-};
-
-const createViteDevServer = async (root: string): Promise<ViteDevServer> => {
-  return await createServer({
+export const handleRequest = async ({
+  isProd,
+  root,
+  url,
+  request,
+  response,
+  vite,
+}: RequestHandler): Promise<string> => {
+  const { template, render } = await getTemplateAndRenderer(
+    getIndexHtml(root),
+    url,
     root,
-    server: {
-      middlewareMode: 'ssr',
-    },
+    vite,
+  );
+
+  const result = await render(url, getSsrManifest(isProd, root), {
+    isClient: false,
+    request,
+    response,
   });
-};
 
-const getTemplateAndRenderer = async (
-  template = '',
-  url: string,
-  root: string,
-  vite?: ViteDevServer,
-) => {
-  let render: any;
-  if (vite) {
-    template = fs.readFileSync(resolve(root, 'index.html'), 'utf-8');
-    template = await vite.transformIndexHtml(url, template);
-    render = (await vite.ssrLoadModule(resolve(root, 'src/main.ts'))).default;
-  } else {
-    render = (await import(resolve(root, 'dist/server/main.js'))).default;
-  }
-  return { template, render };
-};
-
-const buildServeHtml = (
-  template: string,
-  { html, preloadLinks, headTags, bodyAttrs, htmlAttrs }: RendererResult,
-  initialState: any,
-) => {
-  initialState = devalue(initialState);
-  return template
-    .replace('<html', `<html ${htmlAttrs}`)
-    .replace('<body', `<body ${bodyAttrs}`)
-    .replace(`</head>`, `${[preloadLinks, headTags].join('\n')}\n</head>`)
-    .replace(`<!--app-html-->`, html)
-    .replace(
-      '</body>',
-      `<script>window.__INITIAL_STATE__=${initialState}</script>\n</body>`,
-    );
+  return buildServeHtml(template, result);
 };
 
 export const expressMiddleware = async (
   app: Application,
-  {
-    root = process.cwd(),
-    initialState = {},
-    useCompression = true,
-  }: ServerOptions = {},
+  { root = process.cwd(), useCompression = true }: ServerOptions = {},
 ) => {
   const isProd = process.env.NODE_ENV !== 'development';
 
@@ -94,24 +73,17 @@ export const expressMiddleware = async (
   app.use('*', async (req, res) => {
     try {
       const url = req.originalUrl;
-      const { template, render } = await getTemplateAndRenderer(
-        getIndexHtml(root),
-        url,
-        root,
-        vite,
-      );
 
-      const result = await render(url, getSsrManifest(isProd, root), {
-        initialState,
-        isClient: false,
+      const html = await handleRequest({
+        isProd,
+        root,
+        url,
         request: req,
         response: res,
+        vite,
       });
 
-      res
-        .status(200)
-        .set({ 'Content-Type': 'text/html' })
-        .end(buildServeHtml(template, result, initialState));
+      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
     } catch (e: any) {
       vite && vite.ssrFixStacktrace(e);
       console.error(e.stack);
@@ -122,11 +94,7 @@ export const expressMiddleware = async (
 
 export const fastifyMiddleware = async (
   app: FastifyInstance,
-  {
-    root = process.cwd(),
-    initialState = {},
-    useCompression = true,
-  }: ServerOptions = {},
+  { root = process.cwd(), useCompression = true }: ServerOptions = {},
 ) => {
   const isProd = process.env.NODE_ENV !== 'development';
 
@@ -134,7 +102,7 @@ export const fastifyMiddleware = async (
 
   const {
     default: { ssr: ssrAssets },
-  } = await import(resolve('dist/server/package.json'));
+  } = await import(resolve(root, 'dist/server/package.json'));
 
   let vite: ViteDevServer;
   if (!isProd) {
@@ -167,25 +135,118 @@ export const fastifyMiddleware = async (
       if (isAssetRequest || req.method !== 'GET') return next();
 
       // - otherwise -> render vue
-      const { template, render } = await getTemplateAndRenderer(
-        getIndexHtml(root),
-        url,
+      const html = await handleRequest({
+        isProd,
         root,
-        vite,
-      );
-      const result = await render(url, getSsrManifest(isProd, root), {
-        initialState,
-        isClient: false,
+        url,
         request: req,
         response: res,
+        vite,
       });
 
       res.writeHead(200, { 'Content-Type': 'text/html' });
-      return res.end(buildServeHtml(template, result, initialState));
+      return res.end(html);
     } catch (e: any) {
       vite && vite.ssrFixStacktrace(e);
       res.statusCode = 500;
       return res.end(e.stack);
     }
   });
+};
+
+interface HookHandler {
+  isFastify: boolean;
+  isProd: boolean;
+  root: string;
+  hook?: (url: string, req: any, res: any, next: any) => Promise<void>;
+  vite?: ViteDevServer;
+}
+// TODO: polymorph
+export const ssrMiddleware = async (
+  app: Application | FastifyInstance,
+  options: ServerOptions = {},
+) => {
+  const {
+    isProd = process.env.NODE_ENV !== 'development',
+    root = process.cwd(),
+    useCompression = true,
+  } = options;
+
+  const isFastify = 'version' in app;
+  if (isFastify) await app.register(fastifyMiddie);
+
+  const {
+    default: { ssr: ssrAssets },
+  } = await import(resolve(root, 'dist/server/package.json'));
+
+  let vite: ViteDevServer | undefined;
+  if (!isProd) {
+    vite = await createViteDevServer(root);
+    app.use(vite.middlewares);
+  } else {
+    if (isFastify) {
+      if (useCompression) await app.register(fastifyCompression);
+
+      await app.register(fastifyStatic, {
+        root: resolve(root, 'dist/client'),
+      });
+      await app.register(fastifyStatic, {
+        root: resolve(root, 'dist/client/assets'),
+        prefix: '/assets/',
+        decorateReply: false,
+      });
+    } else {
+      if (useCompression) app.use(compression());
+
+      app.use(
+        express.static(resolve('dist/client'), {
+          index: false,
+        }),
+      );
+    }
+  }
+
+  const hookHandler =
+    ({ isFastify, isProd, root, vite, hook }: HookHandler) =>
+    async (req: any, res: any, next: any) => {
+      const url = req.originalUrl;
+      if (hook) await hook(url, req, res, next);
+      // - otherwise -> render vue
+      const html = await handleRequest({
+        isProd,
+        root,
+        url,
+        request: req,
+        response: res,
+        vite,
+      });
+      if (isFastify) {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+      } else {
+        res.status(200).set({ 'Content-Type': 'text/html' });
+      }
+      return res.end(html);
+    };
+
+  if (isFastify) {
+    app.use(
+      hookHandler({
+        isFastify,
+        isProd,
+        root,
+        vite,
+        hook: async (url, req, _, next) => {
+          // - check if incoming request is an asset request
+          const isAssetRequest = ssrAssets.some((asset: string) =>
+            url.substring(1, url.length).startsWith(asset),
+          );
+
+          // - if asset request or not an get => next!
+          if (isAssetRequest || req.method !== 'GET') return next();
+        },
+      }),
+    );
+  } else {
+    app.use('*', hookHandler({ isFastify, isProd, root, vite }));
+  }
 };

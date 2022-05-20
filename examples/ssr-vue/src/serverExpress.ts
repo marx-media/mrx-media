@@ -1,11 +1,11 @@
 import express from 'express';
-import { expressMiddleware } from '@mrx-media/vite-vue-simple-ssr/server';
+import { ssrMiddleware } from '@mrx-media/vite-vue-simple-ssr/server';
 import { simpleLog } from '@mrx-media/vite-vue-simple-ssr/utils';
 
 export const startServer = async () => {
   const app = express();
 
-  await expressMiddleware(app, { initialState: { success: true } });
+  await ssrMiddleware(app);
 
   try {
     app.listen(1337);

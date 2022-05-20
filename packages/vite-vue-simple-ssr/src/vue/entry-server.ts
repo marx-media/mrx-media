@@ -5,7 +5,7 @@ import { renderHeadToString } from '@vueuse/head';
 import { findDependencies, renderPreloadLinks } from '../utils';
 import type { Handler } from '../types';
 
-const simpleSSR: Handler = async (App, { routes }, hook) => {
+const simpleSSR: Handler = async (App, { routes, initialState = {} }, hook) => {
   return async (url: string, manifest: any, context: any) => {
     const app = createSSRApp(App);
     const router = createRouter({
@@ -16,6 +16,7 @@ const simpleSSR: Handler = async (App, { routes }, hook) => {
     const { head } = await hook({
       app,
       router,
+      initialState,
       ...context,
     });
     app.use(router);
@@ -38,7 +39,7 @@ const simpleSSR: Handler = async (App, { routes }, hook) => {
       bodyAttrs = '',
     } = renderHeadToString(head);
 
-    return { html, preloadLinks, headTags, htmlAttrs, bodyAttrs };
+    return { html, preloadLinks, headTags, htmlAttrs, bodyAttrs, initialState };
   };
 };
 

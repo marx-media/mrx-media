@@ -7,8 +7,8 @@
     "build": "npx simple-ssr build",
     "dev:express": "NODE_ENV=development node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverExpress.ts",
     "dev:fastify": "NODE_ENV=development node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverFastify.ts",
-    "start:express": "NODE_ENV=production node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverExpress.ts",
-    "start:fastify": "NODE_ENV=production node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverFastify.ts"
+    "start:express": "node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverExpress.ts",
+    "start:fastify": "node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverFastify.ts"
   },
   "dependencies": {
     "@mrx-media/vite-vue-simple-ssr": "workspace:^1.0.0",

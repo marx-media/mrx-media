@@ -1,15 +1,18 @@
 declare module '@mrx-media/vite-vue-simple-ssr/server' {
   import type { Application } from 'express';
   import type { FastifyInstance } from 'fastify';
-  import type { ServerOptions } from './vue/types';
 
-  const expressMiddleware: (
+  export const expressMiddleware: (
     app: Application,
-    options?: ServerOptions,
+    options?: import('./types').ServerOptions,
   ) => Promise<void>;
-  const fastifyMiddleware: (
+  export const fastifyMiddleware: (
     app: FastifyInstance,
-    options?: ServerOptions,
+    options?: import('./types').ServerOptions,
+  ) => Promise<void>;
+  export const ssrMiddleware: (
+    app: Application | FastifyInstance,
+    options?: import('./types').ServerOptions,
   ) => Promise<void>;
 }
 
