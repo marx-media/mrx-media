@@ -1,6 +1,7 @@
 import { parse, resolve } from 'path';
 import fs from 'fs';
 import { type InlineConfig, build, mergeConfig, resolveConfig } from 'vite';
+import { simpleLog } from '../utils';
 
 const generatePackageJson = async (cfg: InlineConfig) => {
   const viteConfig = await resolveConfig(cfg, 'build');
@@ -19,7 +20,8 @@ const generatePackageJson = async (cfg: InlineConfig) => {
   );
 };
 
-const ssrBuild = async (): Promise<void> => {
+const ssrBuild = async (options: any = {}): Promise<void> => {
+  const { outDir = 'dist' } = options;
   const sharedConfig: InlineConfig = {
     build: {
       emptyOutDir: true,
@@ -33,17 +35,17 @@ const ssrBuild = async (): Promise<void> => {
   };
   const clientConfig: InlineConfig = {
     build: {
-      outDir: 'dist/client',
+      outDir: resolve(outDir, 'client'),
       ssrManifest: true,
     },
   };
   const serverConfig: InlineConfig = {
     build: {
-      outDir: 'dist/server',
+      outDir: resolve(outDir, 'server'),
       ssr: 'src/main.ts',
     },
   };
-  // client build
+
   await build(mergeConfig(clientConfig, sharedConfig));
   await build(mergeConfig(serverConfig, sharedConfig));
   await generatePackageJson(serverConfig);
@@ -51,9 +53,24 @@ const ssrBuild = async (): Promise<void> => {
 
 export const execute = async (): Promise<void> => {
   const args = process.argv.slice(2);
+  const opts = args.slice(1);
+  const options: any = {};
+  let ok = true;
   switch (args[0]) {
     case 'build':
-      await ssrBuild();
+      for (let i = 0; i < opts.length; i++) {
+        const _o = opts[i];
+        if (_o === '--outDir') {
+          if (opts.length < i + 2) {
+            simpleLog('Please specifiy out dir! e.g.: --outDir dist', 'error');
+            ok = false;
+          } else {
+            i++;
+            options[_o.substring(2)] = opts[i];
+          }
+        }
+      }
+      if (ok) await ssrBuild(options);
       break;
 
     default:

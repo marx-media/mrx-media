@@ -4,7 +4,7 @@
   "author": "Dominic Marx <hey@marx-media.net>",
   "type": "module",
   "scripts": {
-    "build": "npx simple-ssr build",
+    "build": "npx simple-ssr build --outDir ../directus-ssr-vue/extensions/hooks/ssr-vue/dist",
     "dev:express": "NODE_ENV=development node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverExpress.ts",
     "dev:fastify": "NODE_ENV=development node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverFastify.ts",
     "start:express": "node --no-warnings --experimental-loader=@mrx-media/vite-vue-simple-ssr/loader --experimental-json-modules src/serverExpress.ts",
