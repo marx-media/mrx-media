@@ -1,0 +1,14 @@
+{
+  "main": "main.ts",
+  "type": "module",
+  "ssr": [
+    "logo.svg",
+    "vue-assets"
+  ],
+  "exports": {
+    "./ssr.config": {
+      "import": "./ssr.config.mjs",
+      "require": "./ssr.config.cjs"
+    }
+  }
+}
