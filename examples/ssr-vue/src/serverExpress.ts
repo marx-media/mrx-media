@@ -4,8 +4,8 @@ import { simpleLog } from '@mrx-media/vite-vue-simple-ssr/utils';
 
 export const startServer = async () => {
   const app = express();
-
-  await ssrMiddleware(app);
+  const isProd = process.env.NODE_ENV !== 'development';
+  await ssrMiddleware(app, { root: isProd ? 'dist' : process.cwd() });
 
   try {
     app.listen(1337);

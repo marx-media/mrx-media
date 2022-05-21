@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "build:watch": "tsup --watch"
+    "build:watch": "tsup --watch",
+    "build:deploy": "tsup --onSuccess \"node scripts/postbuild.js\""
   },
   "keywords": [
     "directus",

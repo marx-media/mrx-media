@@ -1,5 +1,5 @@
 import fastify from 'fastify';
-import { fastifyMiddleware } from '@mrx-media/vite-vue-simple-ssr/server';
+import { ssrMiddleware } from '@mrx-media/vite-vue-simple-ssr/server';
 import { simpleLog } from '@mrx-media/vite-vue-simple-ssr/utils';
 
 export const startServer = async () => {
@@ -8,7 +8,8 @@ export const startServer = async () => {
     disableRequestLogging: true,
   });
 
-  await fastifyMiddleware(app);
+  const isProd = process.env.NODE_ENV !== 'development';
+  await ssrMiddleware(app, { root: isProd ? 'dist' : process.cwd() });
 
   try {
     await app.listen(1337);

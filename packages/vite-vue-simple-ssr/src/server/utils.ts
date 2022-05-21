@@ -6,12 +6,12 @@ import type { RendererResult } from '../types';
 
 export const getSsrManifest = (isProd: boolean, root: string): any => {
   return isProd
-    ? fs.readFileSync(resolve(root, 'dist/client/ssr-manifest.json'), 'utf-8')
+    ? fs.readFileSync(resolve(root, 'client/ssr-manifest.json'), 'utf-8')
     : {};
 };
 
 export const getIndexHtml = (root: string): string => {
-  return fs.readFileSync(resolve(root, 'dist/client/index.html'), 'utf-8');
+  return fs.readFileSync(resolve(root, 'client/index.html'), 'utf-8');
 };
 
 export const createViteDevServer = async (
@@ -37,7 +37,7 @@ export const getTemplateAndRenderer = async (
     template = await vite.transformIndexHtml(url, template);
     render = (await vite.ssrLoadModule(resolve(root, 'src/main.ts'))).default;
   } else {
-    render = (await import(resolve(root, 'dist/server/main.js'))).default;
+    render = (await import(resolve(root, 'server/main.js'))).default;
   }
   return { template, render };
 };

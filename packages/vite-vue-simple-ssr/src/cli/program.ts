@@ -3,19 +3,38 @@ import fs from 'fs';
 import { type InlineConfig, build, mergeConfig, resolveConfig } from 'vite';
 import { simpleLog } from '../utils';
 
-const generatePackageJson = async (cfg: InlineConfig, outDir = 'dist') => {
+const generatePackageJson = async (cfg: InlineConfig, outDir: string) => {
   const viteConfig = await resolveConfig(cfg, 'build');
+
+  const ssr = fs
+    .readdirSync(resolve(outDir, 'client'))
+    .filter((file) => !/(index\.html|manifest\.json)$/i.test(file));
+
   const packageJson = {
     main: parse(viteConfig.build.ssr as string).base,
     type: 'module',
-    ssr: fs
-      .readdirSync(resolve(outDir, 'client'))
-      .filter((file) => !/(index\.html|manifest\.json)$/i.test(file)),
+    ssr,
+    exports: {
+      './ssr.config': {
+        import: './ssr.config.mjs',
+        require: './ssr.config.cjs',
+      },
+    },
   };
 
   fs.writeFileSync(
     resolve(outDir, 'server/package.json'),
     JSON.stringify(packageJson, null, 2),
+    { encoding: 'utf-8' },
+  );
+  fs.writeFileSync(
+    resolve(outDir, 'server/ssr.config.cjs'),
+    `module.exports = ${JSON.stringify(ssr, null, 2)}`,
+    { encoding: 'utf-8' },
+  );
+  fs.writeFileSync(
+    resolve(outDir, 'server/ssr.config.mjs'),
+    `export default ${JSON.stringify(ssr, null, 2)}`,
     { encoding: 'utf-8' },
   );
 };
@@ -36,6 +55,7 @@ const ssrBuild = async (options: any = {}): Promise<void> => {
   const clientConfig: InlineConfig = {
     build: {
       outDir: resolve(outDir, 'client'),
+      assetsDir: 'vue-assets',
       ssrManifest: true,
     },
   };
