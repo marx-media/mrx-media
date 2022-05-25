@@ -1,4 +1,5 @@
 import type { App, Component } from 'vue';
+import type { ViteDevServer } from 'vite';
 import type { RouteRecordRaw, Router } from 'vue-router';
 import type { HeadClient } from '@vueuse/head';
 
@@ -29,6 +30,14 @@ export interface HookParams {
 export interface HookResolve {
   [key: string]: any;
   head: HeadClient;
+}
+
+export interface HookHandler {
+  isFastify: boolean;
+  isProd: boolean;
+  root: string;
+  hook?: (url: string, req: any) => Promise<boolean>;
+  vite?: ViteDevServer;
 }
 
 export interface ServerOptions {

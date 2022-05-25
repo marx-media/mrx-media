@@ -8,7 +8,7 @@ import fastifyMiddie from 'middie';
 import fastifyStatic from '@fastify/static';
 import fastifyCompression from '@fastify/compress';
 import type { Request, Response } from 'express';
-import type { ServerOptions } from '../types';
+import type { HookHandler, ServerOptions } from '../types';
 import { simpleLog } from '../utils';
 import {
   buildServeHtml,
@@ -50,118 +50,6 @@ export const handleRequest = async ({
   return buildServeHtml(template, result);
 };
 
-// export const expressMiddleware = async (
-//   app: Application,
-//   { root = process.cwd(), useCompression = true }: ServerOptions = {},
-// ) => {
-//   const isProd = process.env.NODE_ENV !== 'development';
-
-//   let vite: ViteDevServer | undefined;
-//   if (!isProd) {
-//     vite = await createViteDevServer(root);
-//     app.use(vite.middlewares);
-//   } else {
-//     if (useCompression) {
-//       app.use(compression());
-//     }
-//     app.use(
-//       express.static(resolve('dist/client'), {
-//         index: false,
-//       }),
-//     );
-//   }
-
-//   app.use('*', async (req, res) => {
-//     try {
-//       const url = req.originalUrl;
-
-//       const html = await handleRequest({
-//         isProd,
-//         root,
-//         url,
-//         request: req,
-//         response: res,
-//         vite,
-//       });
-
-//       res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
-//     } catch (e: any) {
-//       vite && vite.ssrFixStacktrace(e);
-//       console.error(e.stack);
-//       res.status(500).end(e.stack);
-//     }
-//   });
-// };
-
-// export const fastifyMiddleware = async (
-//   app: FastifyInstance,
-//   { root = process.cwd(), useCompression = true }: ServerOptions = {},
-// ) => {
-//   const isProd = process.env.NODE_ENV !== 'development';
-
-//   await app.register(fastifyMiddie);
-
-//   const {
-//     default: { ssr: ssrAssets },
-//   } = await import(resolve(root, 'dist/server/package.json'));
-
-//   let vite: ViteDevServer;
-//   if (!isProd) {
-//     vite = await createViteDevServer(root);
-//     app.use(vite.middlewares);
-//   } else {
-//     if (useCompression) {
-//       await app.register(fastifyCompression);
-//     }
-//     await app.register(fastifyStatic, {
-//       root: resolve(root, 'dist/client'),
-//     });
-//     await app.register(fastifyStatic, {
-//       root: resolve(root, 'dist/client/assets'),
-//       prefix: '/assets/',
-//       decorateReply: false,
-//     });
-//   }
-
-//   app.use(async (req, res, next) => {
-//     try {
-//       const url = req.originalUrl!;
-
-//       // - check if incoming request is an asset request
-//       const isAssetRequest = ssrAssets.some((asset: string) =>
-//         url.substring(1, url.length).startsWith(asset),
-//       );
-
-//       // - if asset request or not an get => next!
-//       if (isAssetRequest || req.method !== 'GET') return next();
-
-//       // - otherwise -> render vue
-//       const html = await handleRequest({
-//         isProd,
-//         root,
-//         url,
-//         request: req,
-//         response: res,
-//         vite,
-//       });
-
-//       res.writeHead(200, { 'Content-Type': 'text/html' });
-//       return res.end(html);
-//     } catch (e: any) {
-//       vite && vite.ssrFixStacktrace(e);
-//       res.statusCode = 500;
-//       return res.end(e.stack);
-//     }
-//   });
-// };
-
-interface HookHandler {
-  isFastify: boolean;
-  isProd: boolean;
-  root: string;
-  hook?: (url: string, req: any) => Promise<boolean>;
-  vite?: ViteDevServer;
-}
 // TODO: polymorph
 export const ssrMiddleware = async (
   app: Application | FastifyInstance,
@@ -193,9 +81,6 @@ export const ssrMiddleware = async (
     }
 
     if (isFastify) {
-      simpleLog(
-        `Using Fastify - serving assets: ${resolve(root, 'client/vue-assets')}`,
-      );
       if (useCompression) await app.register(fastifyCompression);
 
       await app.register(fastifyStatic, {
@@ -235,7 +120,6 @@ export const ssrMiddleware = async (
       }
       if (isNext) return next();
       else {
-        simpleLog(`hook ended`);
         // - otherwise -> render vue
         const html = await handleRequest({
           isProd,

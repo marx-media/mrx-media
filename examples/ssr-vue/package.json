@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "author": "Dominic Marx <hey@marx-media.net>",
   "type": "module",
+  "private": "true",
   "scripts": {
     "build": "npx simple-ssr build",
     "build:deploy": "npx simple-ssr build --outDir ../directus-ssr-vue/extensions/hooks/ssr-vue",
@@ -24,7 +25,7 @@
     "@types/express": "^4.17.13",
     "@vitejs/plugin-vue": "^2.3.3",
     "commander": "^9.2.0",
-    "typescript": "4.7.0-beta",
+    "typescript": "4.7.1-rc",
     "vite": "^2.9.9"
   }
 }
