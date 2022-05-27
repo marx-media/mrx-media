@@ -9,6 +9,6 @@ fs.readdirSync(dist)
 	.forEach((file) =>
 		fs.copyFileSync(
 			join(dist, file),
-			resolve('/home/dmarx/marx-media/@mrx-media/examples/directus-ssr-vue/extensions/hooks/ssr-vue', file)
+			resolve('/home/dmarx/marx-media/directus-instance/sites/marx-ulm.de/extensions/hooks/ssr', file)
 		)
 	);

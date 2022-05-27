@@ -23,7 +23,7 @@ __export(src_exports, {
 });
 module.exports = __toCommonJS(src_exports);
 
-// ../../node_modules/.pnpm/tsup@5.12.8_typescript@4.7.0-beta/node_modules/tsup/assets/cjs_shims.js
+// ../../node_modules/.pnpm/tsup@5.12.8_typescript@4.7.1-rc/node_modules/tsup/assets/cjs_shims.js
 var getImportMetaUrl = () => typeof document === "undefined" ? new URL("file:" + __filename).href : document.currentScript && document.currentScript.src || new URL("main.js", document.baseURI).href;
 var importMetaUrl = /* @__PURE__ */ getImportMetaUrl();
 
@@ -33,7 +33,7 @@ var import_url = require("url");
 var import_extensions_sdk = require("@directus/extensions-sdk");
 var import_server = require("@mrx-media/vite-vue-simple-ssr/server");
 var src_default = (0, import_extensions_sdk.defineHook)(({ init }, { env }) => {
-  init("routes.custom.before", async ({ app }) => {
+  init("routes.custom.after", async ({ app }) => {
     const root = env.VITE_ROOT ?? (0, import_path.dirname)((0, import_url.fileURLToPath)(importMetaUrl));
     const isProd = env.VITE_DEV ? !env.VITE_DEV : true;
     await (0, import_server.ssrMiddleware)(app, { root, isProd });

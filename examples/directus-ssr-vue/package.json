@@ -5,7 +5,7 @@
   "private": "true",
   "scripts": {
     "bootstrap": "npx directus bootstrap",
-    "start": "npx directus start"
+    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 npx directus start"
   },
   "dependencies": {
     "@mrx-media/vite-vue-simple-ssr": "workspace:^1.0.0",
